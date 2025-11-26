@@ -27,27 +27,30 @@ class TransactionService:
         - Valida cuentas
         """
         # Validar cuenta
+        # Primero verificar que la cuenta existe
         account = db.query(Account).filter(
-            Account.id == transaction_data.account_id,
-            Account.user_id == user_id
+            Account.id == transaction_data.account_id
         ).first()
         
         if not account:
-            # Verificar si la cuenta existe pero pertenece a otro usuario
-            account_exists = db.query(Account).filter(
-                Account.id == transaction_data.account_id
-            ).first()
-            
-            if account_exists:
-                raise HTTPException(
-                    status_code=403, 
-                    detail=f"La cuenta con ID {transaction_data.account_id} no te pertenece"
-                )
-            else:
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"Cuenta con ID {transaction_data.account_id} no encontrada. Por favor, recarga tus cuentas."
-                )
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Cuenta con ID {transaction_data.account_id} no encontrada. Por favor, recarga tus cuentas."
+            )
+        
+        # Verificar que la cuenta pertenece al usuario
+        if account.user_id != user_id:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"La cuenta con ID {transaction_data.account_id} no pertenece a tu usuario."
+            )
+        
+        # Verificar que la cuenta no esté archivada
+        if account.is_archived:
+            raise HTTPException(
+                status_code=400,
+                detail=f"La cuenta con ID {transaction_data.account_id} está archivada. Actívala primero para poder crear transacciones."
+            )
         
         # Si es transfer, validar cuenta destino
         if transaction_data.type == TransactionType.TRANSFER:

@@ -73,11 +73,21 @@ async def get_current_user(
     token = credentials.credentials
     payload = decode_token(token)
     
-    user_id: int = payload.get("sub")
-    if user_id is None:
+    user_id_raw = payload.get("sub")
+    if user_id_raw is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No se pudo validar las credenciales",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Asegurar que user_id es int (puede venir como string)
+    try:
+        user_id: int = int(user_id_raw) if isinstance(user_id_raw, str) else user_id_raw
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de usuario inválido en el token",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
