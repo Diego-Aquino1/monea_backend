@@ -279,3 +279,67 @@ class CreditCardService:
         
         return payment_transaction
 
+    @staticmethod
+    def register_simple_payment(db: Session, user_id: int, card_id: int,
+                                amount: float) -> Dict:
+        """Registrar pago simple de tarjeta (reduce el balance directamente)"""
+        # Validar tarjeta
+        credit_card = db.query(CreditCard).filter(
+            CreditCard.id == card_id,
+            CreditCard.user_id == user_id
+        ).first()
+        
+        if not credit_card:
+            raise HTTPException(status_code=404, detail="Tarjeta no encontrada")
+        
+        # Crear transacción de pago (ingreso a la cuenta de la tarjeta)
+        payment_date = datetime.now()
+        payment_transaction = Transaction(
+            user_id=user_id,
+            account_id=credit_card.account_id,
+            type=TransactionType.INCOME,
+            amount=amount,
+            date=payment_date,
+            merchant="Pago de tarjeta",
+            notes=f"Pago a {credit_card.card_name}",
+        )
+        
+        db.add(payment_transaction)
+        db.commit()
+        db.refresh(payment_transaction)
+        
+        return {
+            "message": "Pago registrado exitosamente",
+            "transaction_id": payment_transaction.id,
+            "amount": amount,
+            "card_name": credit_card.card_name
+        }
+
+    @staticmethod
+    def delete_credit_card(db: Session, user_id: int, card_id: int):
+        """Eliminar tarjeta de crédito"""
+        credit_card = db.query(CreditCard).filter(
+            CreditCard.id == card_id,
+            CreditCard.user_id == user_id
+        ).first()
+        
+        if not credit_card:
+            raise HTTPException(status_code=404, detail="Tarjeta no encontrada")
+        
+        # Verificar si hay transacciones asociadas
+        transactions_count = db.query(Transaction).filter(
+            Transaction.account_id == credit_card.account_id
+        ).count()
+        
+        if transactions_count > 0:
+            # Solo desactivar la tarjeta, no eliminar
+            credit_card.is_active = False
+            db.commit()
+            return {"message": "Tarjeta desactivada (tiene transacciones asociadas)"}
+        
+        # Si no hay transacciones, eliminar completamente
+        db.delete(credit_card)
+        db.commit()
+        
+        return {"message": "Tarjeta eliminada exitosamente"}
+

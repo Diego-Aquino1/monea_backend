@@ -104,7 +104,7 @@ def pay_credit_card(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Registrar pago de tarjeta"""
+    """Registrar pago de tarjeta (con cuenta origen)"""
     if not payment_date:
         payment_date = datetime.now()
     
@@ -113,4 +113,32 @@ def pay_credit_card(
     )
     
     return {"message": "Pago registrado exitosamente", "transaction_id": transaction.id}
+
+
+from pydantic import BaseModel
+
+class PaymentRequest(BaseModel):
+    amount: float
+
+@router.post("/{card_id}/payment")
+def register_payment(
+    card_id: int,
+    payment: PaymentRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Registrar pago simple de tarjeta (reduce el balance)"""
+    return CreditCardService.register_simple_payment(
+        db, current_user.id, card_id, payment.amount
+    )
+
+
+@router.delete("/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_credit_card(
+    card_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Eliminar tarjeta de crédito"""
+    CreditCardService.delete_credit_card(db, current_user.id, card_id)
 

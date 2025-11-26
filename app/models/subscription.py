@@ -40,6 +40,8 @@ class Subscription(Base):
     # Estado
     is_active = Column(Boolean, default=True)
     is_detected = Column(Boolean, default=False)  # True si fue detectada automáticamente
+    is_investment = Column(Boolean, default=False)  # True si es una cuota de inversión
+    investment_id = Column(Integer, nullable=True)  # ID de la inversión relacionada
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

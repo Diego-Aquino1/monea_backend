@@ -18,7 +18,7 @@ router = APIRouter()
 class SubscriptionCreate(BaseModel):
     name: str
     amount: float
-    currency: str = "MXN"
+    currency: str = "PEN"
     frequency: str = "monthly"
     billing_day: Optional[int] = None
     category_id: Optional[int] = None
@@ -27,6 +27,8 @@ class SubscriptionCreate(BaseModel):
     next_billing_date: Optional[datetime] = None
     notes: Optional[str] = None
     url: Optional[str] = None
+    is_investment: bool = False
+    investment_id: Optional[int] = None
 
 
 class SubscriptionUpdate(BaseModel):
@@ -40,6 +42,8 @@ class SubscriptionUpdate(BaseModel):
     notes: Optional[str] = None
     url: Optional[str] = None
     is_active: Optional[bool] = None
+    is_investment: Optional[bool] = None
+    investment_id: Optional[int] = None
 
 
 class SubscriptionResponse(BaseModel):
@@ -56,6 +60,8 @@ class SubscriptionResponse(BaseModel):
     end_date: Optional[datetime] = None
     next_billing_date: Optional[datetime] = None
     is_active: bool
+    is_investment: bool = False
+    investment_id: Optional[int] = None
     notes: Optional[str] = None
     url: Optional[str] = None
     created_at: datetime
