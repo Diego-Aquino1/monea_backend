@@ -90,6 +90,51 @@ def get_period_dates(cutoff_day: int, reference_date: date = None) -> Tuple[date
     return start_date, end_date
 
 
+def get_closed_period_dates(cutoff_day: int, reference_date: date = None) -> Tuple[date, date]:
+    """
+    Obtener fechas del periodo CERRADO (el que ya se cortó y está por pagarse)
+    Ejemplo: Si hoy es 26 nov, corte 15:
+      - Periodo cerrado: 16 oct - 15 nov (este es el que se debe pagar)
+      - Periodo actual: 16 nov - 15 dic (este está en curso)
+    
+    Returns: (fecha_inicio_periodo_cerrado, fecha_corte_periodo_cerrado)
+    """
+    if reference_date is None:
+        reference_date = date.today()
+    
+    # Fecha de corte de este mes
+    try:
+        current_cutoff = date(reference_date.year, reference_date.month, cutoff_day)
+    except ValueError:
+        # Último día del mes si el día no existe
+        current_cutoff = date(reference_date.year, reference_date.month + 1, 1) - timedelta(days=1)
+    
+    if reference_date > current_cutoff:
+        # Ya pasó el corte de este mes, el periodo cerrado es el que acaba de cerrar
+        # Ejemplo: hoy 26 nov, corte 15 nov -> periodo cerrado: 16 oct - 15 nov
+        end_date = current_cutoff  # 15 de noviembre
+        
+        # Calcular inicio del periodo (día después del corte anterior)
+        prev_month = current_cutoff - relativedelta(months=1)
+        try:
+            prev_cutoff = date(prev_month.year, prev_month.month, cutoff_day)
+        except ValueError:
+            prev_cutoff = date(prev_month.year, prev_month.month + 1, 1) - timedelta(days=1)
+        
+        start_date = prev_cutoff + timedelta(days=1)  # 16 de octubre
+    else:
+        # Aún no pasa el corte, el periodo cerrado es el anterior completo
+        # Ejemplo: hoy 10 nov, corte 15 nov -> periodo cerrado: 16 sep - 15 oct
+        prev_cutoff = current_cutoff - relativedelta(months=1)
+        end_date = prev_cutoff  # 15 de octubre
+        
+        # Calcular inicio del periodo anterior
+        prev_prev_cutoff = prev_cutoff - relativedelta(months=1)
+        start_date = prev_prev_cutoff + timedelta(days=1)  # 16 de septiembre
+    
+    return start_date, end_date
+
+
 def calculate_budget_progress(spent: float, limit: float) -> float:
     """Calcular porcentaje de uso de presupuesto"""
     if limit == 0:

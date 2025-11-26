@@ -84,9 +84,12 @@ class CreditCardService:
             raise HTTPException(status_code=404, detail="Tarjeta no encontrada")
         
         # Obtener periodos (fechas de corte)
-        start_date, cutoff_date = get_period_dates(credit_card.cutoff_day)
+        # Usar get_closed_period_dates para obtener el periodo que ya cerró y está por pagarse
+        from app.utils.calculations import get_closed_period_dates
+        start_date, cutoff_date = get_closed_period_dates(credit_card.cutoff_day)
         
-        # Calcular saldo al corte (transacciones entre fechas del periodo)
+        # Calcular saldo al corte (transacciones entre fechas del periodo CERRADO)
+        # Ejemplo: Si hoy es 26 nov y corte es 15, esto busca gastos del 16 oct al 15 nov
         cutoff_transactions = db.query(Transaction).filter(
             Transaction.account_id == credit_card.account_id,
             Transaction.type == TransactionType.EXPENSE,
