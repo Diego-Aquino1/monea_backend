@@ -33,7 +33,21 @@ class TransactionService:
         ).first()
         
         if not account:
-            raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+            # Verificar si la cuenta existe pero pertenece a otro usuario
+            account_exists = db.query(Account).filter(
+                Account.id == transaction_data.account_id
+            ).first()
+            
+            if account_exists:
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"La cuenta con ID {transaction_data.account_id} no te pertenece"
+                )
+            else:
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Cuenta con ID {transaction_data.account_id} no encontrada. Por favor, recarga tus cuentas."
+                )
         
         # Si es transfer, validar cuenta destino
         if transaction_data.type == TransactionType.TRANSFER:
