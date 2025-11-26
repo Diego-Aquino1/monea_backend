@@ -32,7 +32,7 @@ class SubscriptionService:
             user_id=user_id,
             name=data['name'],
             amount=data['amount'],
-            currency=data.get('currency', 'MXN'),
+            currency=data.get('currency', 'PEN'),
             frequency=data.get('frequency', 'monthly'),
             billing_day=data.get('billing_day'),
             category_id=data.get('category_id'),
@@ -41,7 +41,9 @@ class SubscriptionService:
             next_billing_date=data.get('next_billing_date'),
             notes=data.get('notes'),
             url=data.get('url'),
-            is_active=True
+            is_active=True,
+            is_investment=data.get('is_investment', False),
+            investment_id=data.get('investment_id')
         )
         
         db.add(subscription)

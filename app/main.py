@@ -49,6 +49,53 @@ app.include_router(exports.router, prefix="/api/exports", tags=["exports"])
 async def startup_event():
     """Inicializar base de datos al arrancar"""
     init_db()
+    # Ejecutar migraciones pendientes
+    _run_migrations()
+
+
+def _run_migrations():
+    """Ejecutar migraciones necesarias"""
+    try:
+        from sqlalchemy import inspect, text
+        from app.database import engine
+        
+        inspector = inspect(engine)
+        columns = [col['name'] for col in inspector.get_columns('subscriptions')]
+        
+        # Verificar si faltan las columnas de inversión
+        needs_is_investment = 'is_investment' not in columns
+        needs_investment_id = 'investment_id' not in columns
+        
+        if needs_is_investment or needs_investment_id:
+            with engine.begin() as conn:
+                if needs_is_investment:
+                    try:
+                        conn.execute(text("""
+                            ALTER TABLE subscriptions 
+                            ADD COLUMN is_investment BOOLEAN DEFAULT 0
+                        """))
+                        print("✅ Columna is_investment agregada")
+                    except Exception as e:
+                        error_str = str(e).lower()
+                        if "duplicate column" not in error_str and "already exists" not in error_str:
+                            raise
+                
+                if needs_investment_id:
+                    try:
+                        conn.execute(text("""
+                            ALTER TABLE subscriptions 
+                            ADD COLUMN investment_id INTEGER
+                        """))
+                        print("✅ Columna investment_id agregada")
+                    except Exception as e:
+                        error_str = str(e).lower()
+                        if "duplicate column" not in error_str and "already exists" not in error_str:
+                            raise
+    except Exception as e:
+        # Si hay un error, no bloqueamos el arranque pero lo registramos
+        print(f"⚠️ Error ejecutando migraciones: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 @app.get("/")
