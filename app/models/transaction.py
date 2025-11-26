@@ -92,6 +92,17 @@ class Transaction(Base):
     parent_transaction = relationship("Transaction", remote_side=[id], backref="child_transactions")
     recurring_transaction = relationship("RecurringTransaction", back_populates="transactions")
     installment_purchase = relationship("InstallmentPurchase", back_populates="transactions")
+    
+    # Propiedades calculadas para serialización
+    @property
+    def account_name(self) -> str:
+        """Nombre de la cuenta"""
+        return self.account.name if self.account else None
+    
+    @property
+    def category_name(self) -> str:
+        """Nombre de la categoría"""
+        return self.category.name if self.category else None
 
 
 class TransactionSplit(Base):

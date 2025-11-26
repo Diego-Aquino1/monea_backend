@@ -179,7 +179,15 @@ class TransactionService:
                         start_date: Optional[datetime] = None,
                         end_date: Optional[datetime] = None) -> List[Transaction]:
         """Obtener transacciones con filtros"""
+        from sqlalchemy.orm import joinedload
+        
         query = db.query(Transaction).filter(Transaction.user_id == user_id)
+        
+        # Eager load para obtener account_name y category_name
+        query = query.options(
+            joinedload(Transaction.account),
+            joinedload(Transaction.category)
+        )
         
         if account_id:
             query = query.filter(Transaction.account_id == account_id)
